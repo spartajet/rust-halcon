@@ -1,0 +1,4 @@
+[workspace]
+members = ["rhalcon-generator"]
+resolver = "3"
+

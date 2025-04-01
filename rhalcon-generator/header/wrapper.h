@@ -1,0 +1,1 @@
+#include "C:/Program Files/MVTec/HALCON-24.11-Progress-Steady/include/HalconC.h"

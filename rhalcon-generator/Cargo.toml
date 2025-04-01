@@ -1,0 +1,9 @@
+[package]
+name = "rhalcon-generator"
+version = "24.11.0"
+edition = "2024"
+
+[dependencies]
+
+[build-dependencies]
+bindgen = "0.71.1"
