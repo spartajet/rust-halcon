@@ -1,5 +1,5 @@
 [package]
-name = "rhalcon-generator"
+name = "rust-halcon-lib"
 version = "24.11.0"
 edition = "2024"
 
