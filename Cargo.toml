@@ -1,4 +1,14 @@
-[workspace]
-members = ["rust-halcon-lib"]
-resolver = "3"
+[package]
+name = "rust-halcon"
+version = "24.11.0"
+edition = "2024"
 
+[dependencies]
+
+[build-dependencies]
+bindgen = "0.71.1"
+
+
+[features]
+default = []
+re_generate = []

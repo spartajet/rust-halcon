@@ -33,10 +33,12 @@ where
         Self::extract_bit(byte, index)
     }
     #[inline]
-    pub unsafe fn raw_get_bit(this: *const Self, index: usize) -> bool {
+    pub fn raw_get_bit(this: *const Self, index: usize) -> bool {
         debug_assert!(index / 8 < core::mem::size_of::<Storage>());
         let byte_index = index / 8;
-        let byte = *(core::ptr::addr_of!((*this).storage) as *const u8).offset(byte_index as isize);
+        let byte = unsafe {
+            *(core::ptr::addr_of!((*this).storage) as *const u8).offset(byte_index as isize)
+        };
         Self::extract_bit(byte, index)
     }
     #[inline]
@@ -47,11 +49,7 @@ where
             index % 8
         };
         let mask = 1 << bit_index;
-        if val {
-            byte | mask
-        } else {
-            byte & !mask
-        }
+        if val { byte | mask } else { byte & !mask }
     }
     #[inline]
     pub fn set_bit(&mut self, index: usize, val: bool) {
@@ -61,12 +59,15 @@ where
         *byte = Self::change_bit(*byte, index, val);
     }
     #[inline]
-    pub unsafe fn raw_set_bit(this: *mut Self, index: usize, val: bool) {
+    pub fn raw_set_bit(this: *mut Self, index: usize, val: bool) {
         debug_assert!(index / 8 < core::mem::size_of::<Storage>());
         let byte_index = index / 8;
-        let byte =
-            (core::ptr::addr_of_mut!((*this).storage) as *mut u8).offset(byte_index as isize);
-        *byte = Self::change_bit(*byte, index, val);
+        let byte = unsafe {
+            (core::ptr::addr_of_mut!((*this).storage) as *mut u8).offset(byte_index as isize)
+        };
+        unsafe {
+            *byte = Self::change_bit(*byte, index, val);
+        }
     }
     #[inline]
     pub fn get(&self, bit_offset: usize, bit_width: u8) -> u64 {
@@ -121,7 +122,7 @@ where
         }
     }
     #[inline]
-    pub unsafe fn raw_set(this: *mut Self, bit_offset: usize, bit_width: u8, val: u64) {
+    pub fn raw_set(this: *mut Self, bit_offset: usize, bit_width: u8, val: u64) {
         debug_assert!(bit_width <= 64);
         debug_assert!(bit_offset / 8 < core::mem::size_of::<Storage>());
         debug_assert!((bit_offset + (bit_width as usize)) / 8 <= core::mem::size_of::<Storage>());
@@ -133,6 +134,7 @@ where
             } else {
                 i
             };
+
             Self::raw_set_bit(this, index + bit_offset, val_bit_is_set);
         }
     }
@@ -358,8 +360,8 @@ pub const WCHAR_MAX: u32 = 65535;
 pub const WINT_MIN: u32 = 0;
 pub const WINT_MAX: u32 = 65535;
 pub const __bool_true_false_are_defined: u32 = 1;
-pub const false_: u32 = 0;
 pub const true_: u32 = 1;
+pub const false_: u32 = 0;
 pub const HUINT_MIN: u32 = 0;
 pub const UINT1_MIN: u32 = 0;
 pub const UINT2_MIN: u32 = 0;
@@ -2660,21 +2662,7 @@ unsafe extern "C" {
         _Alignment: usize,
     ) -> *mut ::std::os::raw::c_void;
 }
-unsafe extern "C" {
-    pub fn _errno() -> *mut ::std::os::raw::c_int;
-}
-unsafe extern "C" {
-    pub fn _set_errno(_Value: ::std::os::raw::c_int) -> errno_t;
-}
-unsafe extern "C" {
-    pub fn _get_errno(_Value: *mut ::std::os::raw::c_int) -> errno_t;
-}
-unsafe extern "C" {
-    pub fn __threadid() -> ::std::os::raw::c_ulong;
-}
-unsafe extern "C" {
-    pub fn __threadhandle() -> usize;
-}
+pub type max_align_t = f64;
 pub type _CoreCrtSecureSearchSortCompareFunction = ::std::option::Option<
     unsafe extern "C" fn(
         arg1: *mut ::std::os::raw::c_void,
@@ -3174,6 +3162,15 @@ unsafe extern "C" {
     pub fn _set_error_mode(_Mode: ::std::os::raw::c_int) -> ::std::os::raw::c_int;
 }
 unsafe extern "C" {
+    pub fn _errno() -> *mut ::std::os::raw::c_int;
+}
+unsafe extern "C" {
+    pub fn _set_errno(_Value: ::std::os::raw::c_int) -> errno_t;
+}
+unsafe extern "C" {
+    pub fn _get_errno(_Value: *mut ::std::os::raw::c_int) -> errno_t;
+}
+unsafe extern "C" {
     pub fn __doserrno() -> *mut ::std::os::raw::c_ulong;
 }
 unsafe extern "C" {
@@ -3280,7 +3277,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn ldiv(_Numerator: ::std::os::raw::c_long, _Denominator: ::std::os::raw::c_long)
-        -> ldiv_t;
+    -> ldiv_t;
 }
 unsafe extern "C" {
     pub fn lldiv(
@@ -7492,7 +7489,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn HcStoreICT(ph: Hproc_handle, par: ::std::os::raw::c_int, value: *const Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn HcStoreICTEnc(
@@ -9054,7 +9051,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn write_variation_model(ModelID: Hlong, FileName: *const ::std::os::raw::c_char)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_get_thresh_images_variation_model(
@@ -9284,7 +9281,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_tuple_regexp_test(Data: Htuple, Expression: Htuple, NumMatches: *mut Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn tuple_regexp_test(
@@ -10881,7 +10878,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn open_serial(PortName: *const ::std::os::raw::c_char, SerialHandle: *mut Hlong)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_wait_seconds(Seconds: Htuple) -> Herror;
@@ -12022,7 +12019,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_fread_serialized_item(FileHandle: Htuple, SerializedItemHandle: *mut Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn fread_serialized_item(FileHandle: Hlong, SerializedItemHandle: *mut Hlong) -> Herror;
@@ -14116,7 +14113,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_gen_image_proto(Image: Hobject, ImageCleared: *mut Hobject, Grayval: Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn gen_image_proto(Image: Hobject, ImageCleared: *mut Hobject, Grayval: f64) -> Herror;
@@ -14313,7 +14310,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_gen_region_polygon_xld(Polygon: Hobject, Region: *mut Hobject, Mode: Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn gen_region_polygon_xld(
@@ -14324,7 +14321,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_gen_region_contour_xld(Contour: Hobject, Region: *mut Hobject, Mode: Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn gen_region_contour_xld(
@@ -14405,7 +14402,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_gen_random_region(RegionRandom: *mut Hobject, Width: Htuple, Height: Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn gen_random_region(RegionRandom: *mut Hobject, Width: Hlong, Height: Hlong) -> Herror;
@@ -14889,7 +14886,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_get_region_contour(Region: Hobject, Rows: *mut Htuple, Columns: *mut Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_get_region_runs(
@@ -15057,7 +15054,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn write_ocr_class_knn(OCRHandle: Hlong, FileName: *const ::std::os::raw::c_char)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_clear_all_ocr_class_knn() -> Herror;
@@ -15313,7 +15310,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn write_ocr_class_svm(OCRHandle: Hlong, FileName: *const ::std::os::raw::c_char)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_get_features_ocr_class_svm(
@@ -15525,7 +15522,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn write_ocr_class_mlp(OCRHandle: Hlong, FileName: *const ::std::os::raw::c_char)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_get_features_ocr_class_mlp(
@@ -16299,7 +16296,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_top_hat(Region: Hobject, StructElement: Hobject, RegionTopHat: *mut Hobject)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn top_hat(Region: Hobject, StructElement: Hobject, RegionTopHat: *mut Hobject) -> Herror;
@@ -16410,7 +16407,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_closing_circle(Region: Hobject, RegionClosing: *mut Hobject, Radius: Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn closing_circle(Region: Hobject, RegionClosing: *mut Hobject, Radius: f64) -> Herror;
@@ -16473,7 +16470,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_opening_circle(Region: Hobject, RegionOpening: *mut Hobject, Radius: Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn opening_circle(Region: Hobject, RegionOpening: *mut Hobject, Radius: f64) -> Herror;
@@ -16540,7 +16537,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_erosion_circle(Region: Hobject, RegionErosion: *mut Hobject, Radius: Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn erosion_circle(Region: Hobject, RegionErosion: *mut Hobject, Radius: f64) -> Herror;
@@ -17532,7 +17529,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_determinant_matrix(MatrixID: Htuple, MatrixType: Htuple, Value: *mut Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn determinant_matrix(
@@ -17875,7 +17872,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn set_sub_matrix(MatrixID: Hlong, MatrixSubID: Hlong, Row: Hlong, Column: Hlong)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_get_sub_matrix(
@@ -18161,7 +18158,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn read_shape_model(FileName: *const ::std::os::raw::c_char, ModelID: *mut Hlong)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_serialize_shape_model(ModelID: Htuple, SerializedItemHandle: *mut Htuple) -> Herror;
@@ -18642,7 +18639,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn deserialize_descriptor_model(SerializedItemHandle: Hlong, ModelID: *mut Hlong)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_serialize_descriptor_model(
@@ -18857,7 +18854,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn deserialize_deformable_model(SerializedItemHandle: Hlong, ModelID: *mut Hlong)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_serialize_deformable_model(
@@ -19202,7 +19199,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_get_ncc_model_origin(ModelID: Htuple, Row: *mut Htuple, Column: *mut Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn get_ncc_model_origin(ModelID: Hlong, Row: *mut f64, Column: *mut f64) -> Herror;
@@ -19647,7 +19644,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_read_training_components(FileName: Htuple, ComponentTrainingID: *mut Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn read_training_components(
@@ -22083,7 +22080,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_set_scene_3d_camera_pose(Scene3D: Htuple, CameraIndex: Htuple, Pose: Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn set_scene_3d_camera_pose(Scene3D: Hlong, CameraIndex: Hlong, Pose: f64) -> Herror;
@@ -22114,7 +22111,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_display_scene_3d(WindowHandle: Htuple, Scene3D: Htuple, CameraIndex: Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn display_scene_3d(
@@ -25674,7 +25671,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn read_template(FileName: *const ::std::os::raw::c_char, TemplateID: *mut Hlong)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_clear_all_templates() -> Herror;
@@ -26267,7 +26264,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn energy_gabor(ImageGabor: Hobject, ImageHilbert: Hobject, Energy: *mut Hobject)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_convol_gabor(
@@ -26348,7 +26345,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn convol_fft(ImageFFT: Hobject, ImageFilter: Hobject, ImageConvol: *mut Hobject)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_deserialize_fft_optimization_data(SerializedItemHandle: Htuple) -> Herror;
@@ -27805,7 +27802,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_fread_string(FileHandle: Htuple, OutString: *mut Htuple, IsEOF: *mut Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn fread_string(
@@ -27963,7 +27960,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn select_xld_point(XLDs: Hobject, DestXLDs: *mut Hobject, Row: f64, Column: f64)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_test_xld_point(
@@ -28406,7 +28403,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn moments_region_2nd_rel_invar(Regions: Hobject, PHI1: *mut f64, PHI2: *mut f64)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_moments_region_2nd_invar(
@@ -29734,7 +29731,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn read_class_knn(FileName: *const ::std::os::raw::c_char, KNNHandle: *mut Hlong)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_write_class_knn(KNNHandle: Htuple, FileName: Htuple) -> Herror;
@@ -29859,7 +29856,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn read_class_gmm(FileName: *const ::std::os::raw::c_char, GMMHandle: *mut Hlong)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_write_class_gmm(GMMHandle: Htuple, FileName: Htuple) -> Herror;
@@ -30015,7 +30012,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn read_class_svm(FileName: *const ::std::os::raw::c_char, SVMHandle: *mut Hlong)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_write_class_svm(SVMHandle: Htuple, FileName: Htuple) -> Herror;
@@ -30043,7 +30040,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_evaluate_class_svm(SVMHandle: Htuple, Features: Htuple, Result: *mut Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_classify_class_svm(
@@ -30214,7 +30211,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn read_class_mlp(FileName: *const ::std::os::raw::c_char, MLPHandle: *mut Hlong)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_write_class_mlp(MLPHandle: Htuple, FileName: Htuple) -> Herror;
@@ -30251,7 +30248,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_evaluate_class_mlp(MLPHandle: Htuple, Features: Htuple, Result: *mut Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_train_class_mlp(
@@ -30410,7 +30407,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn write_class_box(ClassifHandle: Hlong, FileName: *const ::std::os::raw::c_char)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_set_class_box_param(ClassifHandle: Htuple, Flag: Htuple, Value: Htuple) -> Herror;
@@ -30459,7 +30456,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_get_class_box_param(ClassifHandle: Htuple, Flag: Htuple, Value: *mut Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn get_class_box_param(
@@ -30512,7 +30509,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_test_sampset_box(ClassifHandle: Htuple, SampKey: Htuple, Error: *mut Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn test_sampset_box(ClassifHandle: Hlong, SampKey: Hlong, Error: *mut f64) -> Herror;
@@ -31151,7 +31148,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_serialize_calib_data(CalibDataID: Htuple, SerializedItemHandle: *mut Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn serialize_calib_data(CalibDataID: Hlong, SerializedItemHandle: *mut Hlong) -> Herror;
@@ -31905,7 +31902,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_get_framegrabber_param(AcqHandle: Htuple, Param: Htuple, Value: *mut Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn get_framegrabber_param(
@@ -33217,7 +33214,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_write_structured_light_model(StructuredLightModel: Htuple, FileName: Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn write_structured_light_model(
@@ -33379,7 +33376,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn get_system_info(Query: *const ::std::os::raw::c_char, Information: *mut Hlong)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_interrupt_operator(HThreadID: Htuple, Mode: Htuple) -> Herror;
@@ -33431,7 +33428,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_serialize_dl_model(DLModelHandle: Htuple, SerializedItemHandle: *mut Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_set_dict_object(Object: Hobject, DictHandle: Htuple, Key: Htuple) -> Herror;
@@ -33598,7 +33595,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn T_remove_object_model_3d_attrib_mod(ObjectModel3D: Htuple, Attributes: Htuple)
-        -> Herror;
+    -> Herror;
 }
 unsafe extern "C" {
     pub fn T_train_dl_model_anomaly_dataset(
