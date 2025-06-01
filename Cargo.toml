@@ -2,6 +2,12 @@
 name = "rust-halcon"
 version = "24.11.0"
 edition = "2024"
+repository = "https://github.com/spartajet/rust-halcon"
+description = "Rust bindings for Halcon C API"
+license = "MIT"
+license-file = "LICENSE"
+authors = ["Dr. Xiaozhong Guo"]
+homepage = "https://github.com/spartajet/rust-halcon"
 
 [dependencies]
 
